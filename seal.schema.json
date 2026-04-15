@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Seal Lockfile",
+  "description": "Informative JSON Schema companion for Seal v1. The prose specification remains normative.",
+  "$comment": "Passing this schema is necessary but not sufficient for Seal conformance. Implementations must also enforce normative requirements from SPEC.md that are not expressible in JSON Schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "policy",
+    "bundles"
+  ],
+  "properties": {
+    "version": {
+      "const": 1,
+      "description": "Schema version. Currently 1."
+    },
+    "policy": {
+      "$ref": "#/$defs/enforcementMode",
+      "description": "Enforcement policy for project-local verification failures."
+    },
+    "discovery": {
+      "type": "array",
+      "description": "Glob patterns defining project-local sealed roots. Prose validation is required for static production and nested-root rules.",
+      "items": {
+        "$ref": "#/$defs/discoveryPattern"
+      }
+    },
+    "bundles": {
+      "type": "object",
+      "description": "Map of bundle key to bundle entry.",
+      "propertyNames": {
+        "$ref": "#/$defs/bundleKey"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/bundleEntry"
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "enforcementMode": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn"
+      ]
+    },
+    "sealedRootRelativePath": {
+      "type": "string",
+      "pattern": "^(?:\\.|(?!\\./)(?!/)(?!.*//)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*\\\\)(?!.*/$).+)$"
+    },
+    "discoveryPattern": {
+      "type": "string",
+      "pattern": "^(?!\\./)(?!/)(?!.*\\*\\*)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)(?!.*/$).+$"
+    },
+    "bundleKey": {
+      "type": "string",
+      "pattern": "^\\./(?!\\.\\.?($|/))[^/\\\\\\r\\n]+(?:/(?!\\.\\.?($|/))[^/\\\\\\r\\n]+)*$"
+    },
+    "bundleEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contentHash",
+        "files"
+      ],
+      "properties": {
+        "revision": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Informational metadata only. A source-specific version identifier recorded at pin time."
+        },
+        "contentHash": {
+          "$ref": "#/$defs/sha256"
+        },
+        "files": {
+          "type": "object",
+          "description": "Map of sealed-root-relative file paths to their individual sha256 hashes.",
+          "minProperties": 1,
+          "propertyNames": {
+            "$ref": "#/$defs/sealedRootRelativePath"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/sha256"
+          }
+        }
+      }
+    }
+  }
+}
